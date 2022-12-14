@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+option go_package = "pkg/proto";
+
+package example;
+
+service ExampleService {
+	rpc ClientStream (stream ExampleRequest) returns (ExampleResponse);
+}
+
+message ExampleRequest {
+	string name = 1;
+	bytes data = 2;
+}
+
+message ExampleResponse {
+	string message = 1;
+}
