@@ -2,7 +2,9 @@ import React, {useEffect, useRef} from "react";
 import { useParams } from "react-router-dom";
 
 const Room = () => {
-  const roomID = useParams();
+  const { roomID } = useParams();
+
+  console.log(roomID)
 
   useEffect(() => {
     const ws = new WebSocket(
