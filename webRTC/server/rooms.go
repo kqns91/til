@@ -23,7 +23,7 @@ type RoomMap struct {
 
 // Init initialises the RoomMap struct
 func (r *RoomMap) Init() {
-	r.Map = make(map[string][]Participant, 0)
+	r.Map = make(map[string][]Participant)
 }
 
 // Get will return the array of participants in the room
@@ -53,6 +53,7 @@ func (r *RoomMap) CreateRoom() string {
 	return roomID
 }
 
+// InsertIntoRoom will create a participant and add it in the hashmap
 func (r *RoomMap) InsertIntoRoom(roomID string, host bool, conn *websocket.Conn) {
 	r.Mutex.Lock()
 	defer r.Mutex.Unlock()

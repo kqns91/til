@@ -30,13 +30,13 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-type broadcatMsg struct {
+type broadcastMsg struct {
 	Message map[string]interface{}
 	RoomID  string
 	Client  *websocket.Conn
 }
 
-var broadcast = make(chan broadcatMsg)
+var broadcast = make(chan broadcastMsg)
 
 func broadcaster() {
 	for {
@@ -54,7 +54,7 @@ func broadcaster() {
 	}
 }
 
-// JoinRoomRequestHandler will join the client in a part
+// JoinRoomRequestHandler will join the client in a particular room
 func JoinRoomRequestHandler(w http.ResponseWriter, r *http.Request) {
 	roomID, ok := r.URL.Query()["roomID"]
 	if !ok {
@@ -64,8 +64,7 @@ func JoinRoomRequestHandler(w http.ResponseWriter, r *http.Request) {
 
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println("Web Socket Upgrade Error: %w", err)
-		return
+		log.Fatal("Web Socket Upgrade Error", err)
 	}
 
 	AllRooms.InsertIntoRoom(roomID[0], false, ws)
@@ -73,14 +72,17 @@ func JoinRoomRequestHandler(w http.ResponseWriter, r *http.Request) {
 	go broadcaster()
 
 	for {
-		var msg broadcatMsg
+		var msg broadcastMsg
+
 		err := ws.ReadJSON(&msg.Message)
 		if err != nil {
-			log.Fatal("Read Error: %w", err)
+			log.Fatal("Read Error: ", err)
 		}
 
 		msg.Client = ws
 		msg.RoomID = roomID[0]
+
+		log.Println(msg.Message)
 
 		broadcast <- msg
 	}
