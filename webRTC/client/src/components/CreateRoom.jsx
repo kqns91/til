@@ -10,6 +10,7 @@ const CreateRoom = () => {
     const resp = await fetch("http://localhost:8000/create");
     const { room_id } = await resp.json();
 
+    console.log(`push: /room/${room_id}`)
     navigate(`/room/${room_id}`)　
   };
 
