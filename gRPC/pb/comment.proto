@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+option go_package = "pkg/proto";
+
+package comment;
+
+service CommentService {
+  // Comment is the method for comment.
+	rpc Comment(CommentRequest) returns (CommentResponse);
+}
+
+// CommentRequest is the request message for Comment method.
+message CommentRequest {
+  // id is the id of the comment.
+  string id = 1;
+}
+
+// CommentResponse is the response message for Comment method.
+message CommentResponse {
+  // id is the id of the comment.
+	string id = 1;
+  string name = 2;
+  // user is deprecated.
+  User user = 3 [deprecated = true];
+}
+
+// User is the user message.
+message User {
+  option deprecated = true;
+  string id = 1;
+  string name = 2;
+  string email = 3;
+  string password = 4;
+  string created_at = 5;
+  string updated_at = 6;
+}
