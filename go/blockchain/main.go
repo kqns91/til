@@ -10,15 +10,23 @@ import (
 )
 
 const (
+	// ハッシュ値の先頭に必要なゼロの数。(マイニングの難易度)
 	MINING_DIFFICULTY = 3
-	MINING_SENDER     = "THE BLOCKCHAIN"
-	MINING_REWARD     = 1.0
+	// マイニング報酬の送信者。
+	MINING_SENDER = "THE BLOCKCHAIN"
+	// マイニング報酬。
+	MINING_REWARD = 1.0
 )
 
+// ブロックの構造体。
 type Block struct {
-	timestamp    int64
-	nonce        int
+	// ブロックが生成された時刻。
+	timestamp int64
+	// ブロックのナンス。
+	nonce int
+	// 1つ前のブロックのハッシュ値。
 	previousHash [32]byte
+	// ブロックで処理するトランザクションのリスト。
 	transactions []*Transaction
 }
 
@@ -59,9 +67,13 @@ func (b *Block) MarshalJSON() ([]byte, error) {
 	})
 }
 
+// ブロックチェーンの構造体。
 type Blockchain struct {
-	transactionPool   []*Transaction
-	chain             []*Block
+	// トランザクションプール。
+	transactionPool []*Transaction
+	// ブロックのリスト。
+	chain []*Block
+	// マイニング報酬の受信者のブロックチェーンアドレス。
 	blockchainAddress string
 }
 
@@ -91,11 +103,13 @@ func (bc *Blockchain) Print() {
 	fmt.Printf("%s\n", strings.Repeat("*", 25))
 }
 
+// トランザクションを追加する。
 func (bc *Blockchain) AddTransaction(senderBlockchainAddress, recipientBlockchainAddress string, value float32) {
 	t := NewTransaction(senderBlockchainAddress, recipientBlockchainAddress, value)
 	bc.transactionPool = append(bc.transactionPool, t)
 }
 
+// トランザクションプールをコピーする。
 func (bc *Blockchain) CopyTransactionPool() []*Transaction {
 	transactions := make([]*Transaction, 0)
 	for _, t := range bc.transactionPool {
@@ -110,6 +124,7 @@ func (bc *Blockchain) CopyTransactionPool() []*Transaction {
 	return transactions
 }
 
+// ハッシュ値の検証。
 func (bc *Blockchain) ValidProof(nonce int, previousHash [32]byte, transactions []*Transaction, difficulty int) bool {
 	zeros := strings.Repeat("0", difficulty)
 	guessBlock := Block{0, nonce, previousHash, transactions}
@@ -117,6 +132,7 @@ func (bc *Blockchain) ValidProof(nonce int, previousHash [32]byte, transactions 
 	return guessHashStr[:difficulty] == zeros
 }
 
+// 有効なハッシュ値が見つかるまで、ナンスをインクリメントする。
 func (bc *Blockchain) ProofOfWork() int {
 	transactions := bc.CopyTransactionPool()
 	previousHash := bc.LastBlock().Hash()
@@ -127,6 +143,7 @@ func (bc *Blockchain) ProofOfWork() int {
 	return nonce
 }
 
+// マイニングを行う。
 func (bc *Blockchain) Mining() bool {
 	bc.AddTransaction(MINING_SENDER, bc.blockchainAddress, MINING_REWARD)
 	nonce := bc.ProofOfWork()
@@ -136,6 +153,7 @@ func (bc *Blockchain) Mining() bool {
 	return true
 }
 
+// ブロックチェーンアドレスの残高を計算する。
 func (bc *Blockchain) CalculateTotalAmount(blockchainAddress string) float32 {
 	var totalAmount float32 = 0.0
 	for _, b := range bc.chain {
@@ -153,10 +171,14 @@ func (bc *Blockchain) CalculateTotalAmount(blockchainAddress string) float32 {
 	return totalAmount
 }
 
+// トランザクションの構造体。
 type Transaction struct {
-	senderBlockchainAddress    string
+	// 送信者のブロックチェーンアドレス。
+	senderBlockchainAddress string
+	// 受信者のブロックチェーンアドレス。
 	recipientBlockchainAddress string
-	value                      float32
+	// 送信する量。
+	value float32
 }
 
 func NewTransaction(senderBlockchainAddress, recipientBlockchainAddress string, value float32) *Transaction {
