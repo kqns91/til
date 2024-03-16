@@ -1,12 +1,15 @@
 package block
 
 import (
+	"crypto/ecdsa"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/kqns91/til/go/blockchain/utils"
 )
 
 const (
@@ -104,9 +107,41 @@ func (bc *Blockchain) Print() {
 }
 
 // トランザクションを追加する。
-func (bc *Blockchain) AddTransaction(senderBlockchainAddress, recipientBlockchainAddress string, value float32) {
+func (bc *Blockchain) AddTransaction(
+	senderBlockchainAddress, recipientBlockchainAddress string,
+	value float32,
+	senderPublicKey *ecdsa.PublicKey,
+	s *utils.Signature,
+) bool {
 	t := NewTransaction(senderBlockchainAddress, recipientBlockchainAddress, value)
-	bc.transactionPool = append(bc.transactionPool, t)
+
+	if senderBlockchainAddress == MINING_SENDER {
+		bc.transactionPool = append(bc.transactionPool, t)
+		return true
+	}
+
+	if bc.VerifyTransactionSignature(senderPublicKey, s, t) {
+		// if bc.CalculateTotalAmount(senderBlockchainAddress) < value {
+		// 	log.Println("ERROR: Not enough balance in a wallet")
+		// 	return false
+		// }
+		bc.transactionPool = append(bc.transactionPool, t)
+		return true
+	}
+
+	log.Println("ERROR: Verify Transaction")
+
+	return false
+}
+
+func (bc *Blockchain) VerifyTransactionSignature(
+	senderPublisKey *ecdsa.PublicKey,
+	s *utils.Signature,
+	t *Transaction,
+) bool {
+	m, _ := json.Marshal(t)
+	h := sha256.Sum256([]byte(m))
+	return ecdsa.Verify(senderPublisKey, h[:], s.R, s.S)
 }
 
 // トランザクションプールをコピーする。
@@ -125,7 +160,12 @@ func (bc *Blockchain) CopyTransactionPool() []*Transaction {
 }
 
 // ハッシュ値の検証。
-func (bc *Blockchain) ValidProof(nonce int, previousHash [32]byte, transactions []*Transaction, difficulty int) bool {
+func (bc *Blockchain) ValidProof(
+	nonce int,
+	previousHash [32]byte,
+	transactions []*Transaction,
+	difficulty int,
+) bool {
 	zeros := strings.Repeat("0", difficulty)
 	guessBlock := Block{0, nonce, previousHash, transactions}
 	guessHashStr := fmt.Sprintf("%x", guessBlock.Hash())
@@ -145,7 +185,7 @@ func (bc *Blockchain) ProofOfWork() int {
 
 // マイニングを行う。
 func (bc *Blockchain) Mining() bool {
-	bc.AddTransaction(MINING_SENDER, bc.blockchainAddress, MINING_REWARD)
+	bc.AddTransaction(MINING_SENDER, bc.blockchainAddress, MINING_REWARD, nil, nil)
 	nonce := bc.ProofOfWork()
 	previousHash := bc.LastBlock().Hash()
 	bc.CreateBlock(nonce, previousHash)
