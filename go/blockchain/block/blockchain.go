@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/kqns91/til/go/blockchain/utils"
@@ -18,7 +19,8 @@ const (
 	// マイニング報酬の送信者。
 	MINING_SENDER = "THE BLOCKCHAIN"
 	// マイニング報酬。
-	MINING_REWARD = 1.0
+	MINING_REWARD    = 1.0
+	MINING_TIMER_SEC = 20
 )
 
 // ブロックの構造体。
@@ -79,6 +81,7 @@ type Blockchain struct {
 	// マイニング報酬の受信者のブロックチェーンアドレス。
 	blockchainAddress string
 	port              uint16
+	mux               sync.Mutex
 }
 
 func NewBlockchain(blockchainAddress string, port uint16) *Blockchain {
@@ -86,6 +89,10 @@ func NewBlockchain(blockchainAddress string, port uint16) *Blockchain {
 	bc := &Blockchain{blockchainAddress: blockchainAddress, port: port}
 	bc.CreateBlock(0, b.Hash())
 	return bc
+}
+
+func (bc *Blockchain) TransactionPool() []*Transaction {
+	return bc.transactionPool
 }
 
 func (bc *Blockchain) MarshalJSON() ([]byte, error) {
@@ -113,6 +120,20 @@ func (bc *Blockchain) Print() {
 		block.Print()
 	}
 	fmt.Printf("%s\n", strings.Repeat("*", 25))
+}
+
+func (bc *Blockchain) CreateTransaction(
+	senderBlockchainAddress, recipientBlockchainAddress string,
+	value float32,
+	senderPublicKey *ecdsa.PublicKey,
+	s *utils.Signature,
+) bool {
+	isTransacted := bc.AddTransaction(senderBlockchainAddress, recipientBlockchainAddress, value, senderPublicKey, s)
+
+	// TODO
+	// Sync
+
+	return isTransacted
 }
 
 // トランザクションを追加する。
@@ -194,12 +215,24 @@ func (bc *Blockchain) ProofOfWork() int {
 
 // マイニングを行う。
 func (bc *Blockchain) Mining() bool {
+	bc.mux.Lock()
+	defer bc.mux.Unlock()
+
+	if len(bc.transactionPool) == 0 {
+		return false
+	}
+
 	bc.AddTransaction(MINING_SENDER, bc.blockchainAddress, MINING_REWARD, nil, nil)
 	nonce := bc.ProofOfWork()
 	previousHash := bc.LastBlock().Hash()
 	bc.CreateBlock(nonce, previousHash)
 	log.Println("action=mining, status=success")
 	return true
+}
+
+func (bc *Blockchain) StartMining() {
+	bc.Mining()
+	_ = time.AfterFunc(MINING_TIMER_SEC*time.Second, bc.StartMining)
 }
 
 // ブロックチェーンアドレスの残高を計算する。
@@ -255,4 +288,20 @@ func (t *Transaction) MarshalJSON() ([]byte, error) {
 		RecipientBlockchainAddress: t.recipientBlockchainAddress,
 		Value:                      t.value,
 	})
+}
+
+type TransactionRequest struct {
+	SenderBlockchainAddress    *string  `json:"sender_blockchain_address"`
+	RecipientBlockchainAddress *string  `json:"recipient_blockchain_address"`
+	SenderPublicKey            *string  `json:"sender_public_key"`
+	Value                      *float32 `json:"value"`
+	Signature                  *string  `json:"signature"`
+}
+
+func (t *TransactionRequest) Validate() bool {
+	return t.SenderBlockchainAddress != nil &&
+		t.RecipientBlockchainAddress != nil &&
+		t.SenderPublicKey != nil &&
+		t.Value != nil &&
+		t.Signature != nil
 }
