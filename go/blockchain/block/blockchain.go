@@ -305,3 +305,15 @@ func (t *TransactionRequest) Validate() bool {
 		t.Value != nil &&
 		t.Signature != nil
 }
+
+type AmountResponse struct {
+	Amount float32 `json:"amount"`
+}
+
+func (ar *AmountResponse) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Amount float32 `json:"amount"`
+	}{
+		Amount: ar.Amount,
+	})
+}
