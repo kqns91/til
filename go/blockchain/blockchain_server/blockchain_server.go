@@ -33,9 +33,6 @@ func (bcs *BlockchainServer) GetBlockchain() *block.Blockchain {
 		minersWallet := wallet.NewWallet()
 		bc = block.NewBlockchain(minersWallet.BlockchainAddress(), bcs.Port())
 		cache["blockchain"] = bc
-		fmt.Printf("private_key: %v\n", minersWallet.PrivateKey())
-		fmt.Printf("public_key : %v\n", minersWallet.PublicKey())
-		fmt.Printf("blockchain_address    : %v\n", minersWallet.BlockchainAddress())
 	}
 	return bc
 }
@@ -149,6 +146,8 @@ func (bcs *BlockchainServer) Amount(w http.ResponseWriter, r *http.Request) {
 }
 
 func (bcs *BlockchainServer) Run() {
+	bcs.GetBlockchain().Run()
+
 	http.HandleFunc("/", bcs.GetChain)
 	http.HandleFunc("/transactions", bcs.Transactions)
 	http.HandleFunc("/mine", bcs.Mine)
