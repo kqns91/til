@@ -1,6 +1,14 @@
-.PHONY: psql
-psql:
+.PHONY: psql-up
+psql-up:
 		docker compose up -d
+
+.PHONY: psql-exec
+psql-exec:
+		docker compose exec postgres psql -U postgres
+
+.PHONY: migrate
+migrate:
+		php artisan migrate
 
 .PHONY: clear
 clear:
