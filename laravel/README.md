@@ -200,6 +200,12 @@ postgres=# select * from permissions_id_seq ;
           1 |      32 | t
 (1 row)
 
+postgres=# select * from roles_id_seq ;
+ last_value | log_cnt | is_called 
+------------+---------+-----------
+          1 |      32 | t
+(1 row)
+
 postgres=# select * from role_has_permissions ;
  permission_id | role_id 
 ---------------+---------
