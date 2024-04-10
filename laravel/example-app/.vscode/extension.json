@@ -1,0 +1,12 @@
+{
+  "recommendations": [
+    "DEVSENSE.phptools-vscode",
+    "shufo.vscode-blade-formatter",
+    "onecentlin.laravel-blade",
+    "amiralizadeh9480.laravel-extra-intellisense",
+    "codingyu.laravel-goto-view",
+    "formulahendry.auto-rename-tag",
+    "editorconfig.editorconfig",
+    "seatonjiang.gitmoji-vscode"
+  ]
+}
